@@ -13,6 +13,7 @@ const PARITY_SHARDS: usize = N_VALIDATORS - DATA_SHARDS;
 
 pub const BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/rand_data.bin"));
 
+/*
 pub fn roundtrip<E, R>(encode: E, reconstruct: R, payload: &[u8])
 where
 	E: Fn(&[u8]) -> Vec<WrappedShard>,
@@ -54,3 +55,4 @@ mod test {
 		roundtrip(novel_poly_basis::encode, novel_poly_basis::reconstruct, &BYTES[0..32])
 	}
 }
+*/

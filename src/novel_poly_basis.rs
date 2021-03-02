@@ -11,43 +11,49 @@ use super::*;
 
 use std::slice::from_raw_parts;
 
+type GFSymbol = u8;
+const FIELD_BITS: usize = 8;
+const GENERATOR: GFSymbol = 0x1D; //x^16 + x^5 + x^3 + x^2 + 1
+// Cantor basis
+const BASE: [GFSymbol; FIELD_BITS] = [1_u8, 214, 152, 146, 86, 200, 88, 230];
+
+/*
 type GFSymbol = u16;
-
 const FIELD_BITS: usize = 16;
-
 const GENERATOR: GFSymbol = 0x2D; //x^16 + x^5 + x^3 + x^2 + 1
-
 // Cantor basis
 const BASE: [GFSymbol; FIELD_BITS] =
 	[1_u16, 44234, 15374, 5694, 50562, 60718, 37196, 16402, 27800, 4312, 27250, 47360, 64952, 64308, 65336, 39198];
+*/
+
 
 const FIELD_SIZE: usize = 1_usize << FIELD_BITS;
 
 const MODULO: GFSymbol = (FIELD_SIZE - 1) as GFSymbol;	// All bits set
 
-static mut LOG_TABLE: [GFSymbol; FIELD_SIZE] = [0_u16; FIELD_SIZE];
-static mut EXP_TABLE: [GFSymbol; FIELD_SIZE] = [0_u16; FIELD_SIZE];
+static mut LOG_TABLE: [GFSymbol; FIELD_SIZE] = [0; FIELD_SIZE];
+static mut EXP_TABLE: [GFSymbol; FIELD_SIZE] = [0; FIELD_SIZE];
 
 //-----Used in decoding procedure-------
 //twisted factors used in FFT
-static mut SKEW_FACTOR: [GFSymbol; MODULO as usize] = [0_u16; MODULO as usize];
+static mut SKEW_FACTOR: [GFSymbol; MODULO as usize] = [0; MODULO as usize];
 
 //factors used in formal derivative
-static mut B: [GFSymbol; FIELD_SIZE >> 1] = [0_u16; FIELD_SIZE >> 1];
+static mut B: [GFSymbol; FIELD_SIZE >> 1] = [0; FIELD_SIZE >> 1];
 
 //factors used in the evaluation of the error locator polynomial
-static mut LOG_WALSH: [GFSymbol; FIELD_SIZE] = [0_u16; FIELD_SIZE];
+static mut LOG_WALSH: [GFSymbol; FIELD_SIZE] = [0; FIELD_SIZE];
 
 //return a*EXP_TABLE[b] over GF(2^r)
 fn mul_table(a: GFSymbol, b: GFSymbol) -> GFSymbol {
-	if a != 0_u16 {
+	if a != 0 {
 		unsafe {
 			let offset = (LOG_TABLE[a as usize] as u32 + b as u32 & MODULO as u32)
 				+ (LOG_TABLE[a as usize] as u32 + b as u32 >> FIELD_BITS);
 			EXP_TABLE[offset as usize]
 		}
 	} else {
-		0_u16
+		0
 	}
 }
 
@@ -281,13 +287,13 @@ unsafe fn init_dec() {
 		}
 
 		// 
-		let idx = mul_table(field_base[m], LOG_TABLE[(field_base[m] ^ 1_u16) as usize]);
+		let idx = mul_table(field_base[m], LOG_TABLE[(field_base[m] ^ 1) as usize]);
 		field_base[m] = MODULO - LOG_TABLE[idx as usize];
 
 		for i in (m + 1)..(FIELD_BITS - 1) {
-			let b = LOG_TABLE[(field_base[i] as u16 ^ 1_u16) as usize] as u32 + field_base[m] as u32;
+			let b = LOG_TABLE[(field_base[i] as GFSymbol ^ 1) as usize] as u32 + field_base[m] as u32;
 			let b = b % MODULO as u32;
-			field_base[i] = mul_table(field_base[i], b as u16);
+			field_base[i] = mul_table(field_base[i], b as GFSymbol);
 		}
 	}
 	// 
@@ -346,7 +352,7 @@ fn encode_low(data: &[GFSymbol], k: usize, codeword: &mut [GFSymbol], n: usize) 
 
 fn mem_zero(zerome: &mut [GFSymbol]) {
 	for i in 0..zerome.len() {
-		zerome[i] = 0_u16;
+		zerome[i] = 0;
 	}
 }
 
@@ -410,7 +416,7 @@ fn decode_main(codeword: &mut [GFSymbol], k: usize, erasure: &[bool], log_walsh2
 	let recover_up_to = k;
 
 	for i in 0..n {
-		codeword[i] = if erasure[i] { 0_u16 } else { mul_table(codeword[i], log_walsh2[i]) };
+		codeword[i] = if erasure[i] { 0 } else { mul_table(codeword[i], log_walsh2[i]) };
 	}
 	inverse_fft_in_novel_poly_basis(codeword, n, 0);
 
@@ -432,15 +438,16 @@ fn decode_main(codeword: &mut [GFSymbol], k: usize, erasure: &[bool], log_walsh2
 	fft_in_novel_poly_basis(codeword, recover_up_to, 0);
 
 	for i in 0..recover_up_to {
-		codeword[i] = if erasure[i] { mul_table(codeword[i], log_walsh2[i]) } else { 0_u16 };
+		codeword[i] = if erasure[i] { mul_table(codeword[i], log_walsh2[i]) } else { 0 };
 	}
 }
 
 const N: usize = FIELD_SIZE;
-const K: usize = 4;
+const K: usize = 64;
 
 use itertools::Itertools;
 
+/*
 pub fn encode(data: &[u8]) -> Vec<WrappedShard> {
 	unsafe { init() };
 
@@ -461,7 +468,7 @@ pub fn encode(data: &[u8]) -> Vec<WrappedShard> {
 		.chain(std::iter::repeat(0u8).take(zero_bytes_to_add))
 		.tuple_windows()
 		.step_by(2)
-		.map(|(a, b)| (b as u16) << 8 | a as u16)
+		.map(|(a, b)| (b as GFSymbol) << 8 | a as GFSymbol)
 		.collect::<Vec<GFSymbol>>();
 
 	// assert_eq!(K, data.len());
@@ -518,29 +525,29 @@ pub fn reconstruct(received_shards: Vec<Option<WrappedShard>>) -> Option<Vec<u8>
 		.collect::<Vec<bool>>();
 
 	// The recovered _data_ chunks AND parity chunks
-	let mut recovered: Vec<GFSymbol> = std::iter::repeat(0u16).take(N).collect();
+	let mut recovered: Vec<GFSymbol> = std::iter::repeat(0).take(N).collect();
 
 	// get rid of all `None`s
 	let mut codeword = received_shards
 		.into_iter()
 		.enumerate()
 		.map(|(idx, wrapped)| {
-			// fill the gaps with `0_u16` codewords
+			// fill the gaps with `0` codewords
 			if let Some(wrapped) = wrapped {
 				let v: &[[u8; 2]] = wrapped.as_ref();
-				(idx, u16::from_le_bytes(v[0]))
+				(idx, GFSymbol::from_le_bytes(v[0]))
 			} else {
-				(idx, 0_u16)
+				(idx, 0)
 			}
 		})
 		.map(|(idx, codeword)| {
-			// copy the good messages (here it's just one codeword/u16 right now)
+			// copy the good messages (here it's just one codeword/GFSymbol right now)
 			if idx < N {
 				recovered[idx] = codeword;
 			}
 			codeword
 		})
-		.collect::<Vec<u16>>();
+		.collect::<Vec<GFSymbol>>();
 
 	// filled up the remaining spots with 0s
 	assert_eq!(codeword.len(), N);
@@ -548,7 +555,7 @@ pub fn reconstruct(received_shards: Vec<Option<WrappedShard>>) -> Option<Vec<u8>
 	let recover_up_to = N; // the first k would suffice for the original k message codewords
 
 	//---------Erasure decoding----------------
-	let mut log_walsh2: [GFSymbol; FIELD_SIZE] = [0_u16; FIELD_SIZE];
+	let mut log_walsh2: [GFSymbol; FIELD_SIZE] = [0; FIELD_SIZE];
 
 	// Evaluate error locator polynomial
 	eval_error_polynomial(&erasures[..], &mut log_walsh2[..], N);
@@ -574,6 +581,7 @@ pub fn reconstruct(received_shards: Vec<Option<WrappedShard>>) -> Option<Vec<u8>
 	};
 	Some(recovered.to_vec())
 }
+*/
 
 #[cfg(test)]
 mod test {
@@ -621,6 +629,7 @@ mod test {
 		itertools::assert_equal(data, expected);
 	}
 
+    /*
 	#[test]
 	fn flt_rountrip_small() {
 		const N: usize = 16;
@@ -639,6 +648,7 @@ mod test {
 		inverse_fft_in_novel_poly_basis(&mut data, N, N / 4);
 		itertools::assert_equal(data.iter(), EXPECTED.iter());
 	}
+    */
 
 	#[test]
 	fn ported_c_test() {
@@ -654,7 +664,7 @@ mod test {
 		// for i in (N - K)..N {
         for i in 0..K { 
 			//filled with random numbers
-			data[i] = (i * i % MODULO as usize) as u16;
+			data[i] = (i * i % MODULO as usize) as GFSymbol;
 			// data[i] = rand_gf_element();
 		}
 
@@ -668,7 +678,7 @@ mod test {
 		print_sha256("data", &data[..]);
 
 		//---------encoding----------
-		let mut codeword = [0_u16; N];
+		let mut codeword = [0; N];
 
 		// assert!(K + K >= N);
 		// let (data_till_t, data_skip_t) = data.split_at_mut(N - K);
@@ -705,7 +715,7 @@ mod test {
 		print_sha256("erased", &codeword);
 
 		//---------Erasure decoding----------------
-		let mut log_walsh2: [GFSymbol; FIELD_SIZE] = [0_u16; FIELD_SIZE];
+		let mut log_walsh2: [GFSymbol; FIELD_SIZE] = [0; FIELD_SIZE];
 		eval_error_polynomial(&erasure[..], &mut log_walsh2[..], N);
 
 		print_sha256("log_walsh2", &log_walsh2);
