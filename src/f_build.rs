@@ -1,4 +1,6 @@
 
+
+
 /// Compute tables determined solely by the field, which never depend
 /// upon the FFT domain or erasure coding paramaters.
 ///
@@ -8,6 +10,15 @@
 /// We thus assume it depends only upon the field for now.
 #[allow(dead_code)]
 pub(crate) fn write_field_tables(out: std::path::PathBuf) -> std::io::Result<()> {
+    let mut base: [Elt; FIELD_BITS] = [0; FIELD_BITS];
+    let mut next = BASE_FINAL;
+    for b in base.iter_mut().rev() {
+        *b = next;
+        let square = gf_mul_bitpoly_reduced(next,next);
+        next ^= square;
+    }
+    assert_eq!(next,0);
+
 	let mut log_table: [Elt; FIELD_SIZE] = [0; FIELD_SIZE];
 	let mut exp_table: [Elt; FIELD_SIZE] = [0; FIELD_SIZE];
 
@@ -27,7 +38,7 @@ pub(crate) fn write_field_tables(out: std::path::PathBuf) -> std::io::Result<()>
 	log_table[0] = 0;
 	for i in 0..FIELD_BITS {
 		for j in 0..(1 << i) {
-			log_table[j + (1 << i)] = log_table[j] ^ BASE[i];
+			log_table[j + (1 << i)] = log_table[j] ^ base[i];
 		}
 	}
 	for i in 0..FIELD_SIZE {
@@ -41,6 +52,8 @@ pub(crate) fn write_field_tables(out: std::path::PathBuf) -> std::io::Result<()>
 
 	let path = out.join(format!("table_{}.rs", FIELD_NAME));
 	let mut w = fs_err::OpenOptions::new().create(true).truncate(true).write(true).open(path) ?;
+
+	write_const(&mut w, "BASE", &base, "[Elt; FIELD_BITS]") ?;
 
 	write_const(&mut w, "LOG_TABLE", &log_table, "[Elt; FIELD_SIZE]") ?;
 	write_const(&mut w, "EXP_TABLE", &exp_table, "[Elt; FIELD_SIZE]") ?;

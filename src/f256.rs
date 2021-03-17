@@ -25,11 +25,18 @@ pub const ONEMASK: Elt = (FIELD_SIZE - 1) as Elt;
 
 /// Quotient ideal generator given by tail of irreducible polynomial
 pub const GENERATOR: Elt = 0x1D; //GF(2^8): x^8 + x^4 + x^3 + x^2 + 1
+// /// selected for GFNI compatability.
+// pub const GENERATOR: Elt = 0x1B; //GF(2^8): x^8 + x^4 + x^3 + x + 1
 
 // impl Additive {
 //     pub const ONE: Additive = Additive(???);
 // }
 
+/// Cantor basis' final element
+pub const BASE_FINAL: Elt = 230;
+
 // Cantor basis
-pub const BASE: [Elt; FIELD_BITS] = [1, 214, 152, 146, 86, 200, 88, 230];
+// pub const BASE: [Elt; FIELD_BITS] = [1, 214, 152, 146, 86, 200, 88, 230];
+
+
 
