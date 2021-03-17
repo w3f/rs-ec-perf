@@ -12,12 +12,14 @@
 pub(crate) fn write_field_tables(out: std::path::PathBuf) -> std::io::Result<()> {
     let mut base: [Elt; FIELD_BITS] = generate_cantor_basis(BASE_FINAL).unwrap();
     // Find new Cantor basis if desired, but requires correct multiplication
-    // unwrap_or_else(|| {
-    //    for bf in (0..=255).rev() {
-    //        if let Some(base) = generate_cantor_basis(bf) { return base; }
-    //    }
-    //    panic!();
-    // });
+    /*
+    .unwrap_or_else(|| {
+        for bf in (0..=255).rev() {
+          if let Some(base) = generate_cantor_basis(bf) { return base; }
+        }
+        panic!("No Cantor basis found!");
+    });
+    */
 
 	let mut log_table: [Elt; FIELD_SIZE] = [0; FIELD_SIZE];
 	let mut exp_table: [Elt; FIELD_SIZE] = [0; FIELD_SIZE];
