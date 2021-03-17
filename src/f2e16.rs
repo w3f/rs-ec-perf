@@ -47,5 +47,5 @@ fn embedded_gf256() {
             let j = Additive(j as Elt);
             assert!(j.mul(i).0 & mask == 0);
         }
-    }    
+    }
 }
