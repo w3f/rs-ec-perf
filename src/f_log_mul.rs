@@ -110,7 +110,7 @@ fn gf_mul_bitpoly_reduced(mut a: Elt, mut b: Elt) -> Elt {
 }
 
 #[test]
-fn cantor_basis() {
+fn is_cantor_basis() {
     for w in BASE.windows(2) {
         let b = w[1];
         let square = gf_mul_bitpoly_reduced(b,b);
@@ -121,6 +121,17 @@ fn cantor_basis() {
     }
 }
 
+fn generate_cantor_basis(mut next: Elt) -> Option<[Elt; FIELD_BITS]> {
+    let mut base: [Elt; FIELD_BITS] = [0; FIELD_BITS];
+    base[0] = 1;
+    for b in base.iter_mut().rev() {
+        if next == 0 || (next == 1 && *b != 1) { return None; }
+        *b = next;
+        let square = gf_mul_bitpoly_reduced(next,next);
+        next ^= square;
+    }
+    if next == 0 { Some(base) } else { None }
+}
 
 /*
 Actually our to_multiplier abstraction is leaky

@@ -10,14 +10,14 @@
 /// We thus assume it depends only upon the field for now.
 #[allow(dead_code)]
 pub(crate) fn write_field_tables(out: std::path::PathBuf) -> std::io::Result<()> {
-    let mut base: [Elt; FIELD_BITS] = [0; FIELD_BITS];
-    let mut next = BASE_FINAL;
-    for b in base.iter_mut().rev() {
-        *b = next;
-        let square = gf_mul_bitpoly_reduced(next,next);
-        next ^= square;
-    }
-    assert_eq!(next,0);
+    let mut base: [Elt; FIELD_BITS] = generate_cantor_basis(BASE_FINAL).unwrap();
+    // Find new Cantor basis if desired, but requires correct multiplication
+    // unwrap_or_else(|| {
+    //    for bf in (0..=255).rev() {
+    //        if let Some(base) = generate_cantor_basis(bf) { return base; }
+    //    }
+    //    panic!();
+    // });
 
 	let mut log_table: [Elt; FIELD_SIZE] = [0; FIELD_SIZE];
 	let mut exp_table: [Elt; FIELD_SIZE] = [0; FIELD_SIZE];

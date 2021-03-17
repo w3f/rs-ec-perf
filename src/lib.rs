@@ -24,8 +24,6 @@ pub mod status_quo;
 pub mod f256;
 pub mod f2e16;
 
-/*
-```
 #[test]
 fn agreement_f2e16_with_f256() {
     for i in 1..=255 {
@@ -38,8 +36,6 @@ fn agreement_f2e16_with_f256() {
         }
     }    
 }
-```
-*/
 
 pub mod novel_poly_basis;
 #[cfg(feature = "cmp-with-cxx")]
