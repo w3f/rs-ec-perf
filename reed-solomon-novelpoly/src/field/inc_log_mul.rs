@@ -134,6 +134,13 @@ fn generate_cantor_basis(mut next: Elt) -> Option<[Elt; FIELD_BITS]> {
     if next == 0 { Some(base) } else { None }
 }
 
+/// compute the phi_star
+/// phi_star = phi(x) 
+/// where x is the root of gf16_minpoly
+fn compute_phi_star(gf16_minpoly: u8) -> Elt {
+    
+}
+
 /*
 Actually our to_multiplier abstraction is leaky
 
