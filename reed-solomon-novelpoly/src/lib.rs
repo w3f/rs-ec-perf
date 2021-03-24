@@ -1,4 +1,5 @@
 #![forbid(unused_crate_dependencies)]
+extern crate bit_vec;
 
 pub mod errors;
 pub use errors::*;
@@ -6,7 +7,10 @@ pub use errors::*;
 pub mod util;
 pub use util::*;
 
+
 pub mod field;
+                     
+pub use self::field::linear_algebra_util;
 pub use self::field::f256;
 pub use self::field::f2e16;
 

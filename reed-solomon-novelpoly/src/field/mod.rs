@@ -9,7 +9,7 @@ pub use traits::{FieldAdd,FieldMul};
 pub mod f256;
 pub mod f2e16;
 pub mod afft;
-
+pub mod linear_algebra_util;
 
 #[test]
 fn agreement_f2e16_with_f256() {
