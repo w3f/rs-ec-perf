@@ -6,43 +6,73 @@ use super::*;
 
 include!("inc_cantor_basis.rs");
 
-impl Mul<Multiplier> for Additive {
+/// Multiplicaiton friendly LOG form of f2e16
+#[derive(Clone, Copy, Debug, Add, AddAssign, Sub, SubAssign, PartialEq, Eq)] // Default, PartialOrd,Ord
+pub struct Logarithm(pub Elt);
+
+impl Logarithm {
+    #[inline(always)]
+	pub fn to_wide(self) -> Wide {
+		self.0 as Wide
+	}
+    #[inline(always)]
+	pub fn from_wide(x: Wide) -> Logarithm {
+		Logarithm(x as Elt)
+	}
+}
+
+impl Mul<Logarithm> for Logarithm {
     type Output = Additive;
 
-	/// Return a*EXP_TABLE[b] over GF(2^r)
+	/// TODO:  Leaky abstraction!  Return a*EXP_TABLE[b] over GF(2^r)
     #[inline(always)]
     #[cfg(table_bootstrap_complete)]
-    fn mul(self, other: Multiplier) -> Additive {
-		if self == Self::ZERO {
-			return Self::ZERO;
-		}
-		let log = (LOG_TABLE[self.0 as usize] as Wide) + other.0 as Wide;
+    fn mul(self, other: Logarithm) -> Additive {
+		let log = self.0 as Wide + other.0 as Wide;
+        // Compute sum of logarithms modulo 2^FIELD_BITS-1 perhaps? 
 		let offset = (log & ONEMASK as Wide) + (log >> FIELD_BITS);
 		Additive(EXP_TABLE[offset as usize])
     }
 
     #[cfg(not(table_bootstrap_complete))]
-    fn mul(self, other: Multiplier) -> Additive { panic!(); }
+    fn mul(self, other: Logarithm) -> Additive { panic!(); }
 }
 
-impl MulAssign<Multiplier> for Additive {
+impl Mul<Logarithm> for Additive {
+    type Output = Additive;
+
+	/// Return a*EXP_TABLE[b] over GF(2^r)
     #[inline(always)]
-    fn mul_assign(&mut self, rhs: Multiplier) {
+    #[cfg(table_bootstrap_complete)]
+    fn mul(self, other: Logarithm) -> Additive {
+		if self == Self::ZERO {
+			return Self::ZERO;
+		}
+        self.to_multiplier() * other
+    }
+
+    #[cfg(not(table_bootstrap_complete))]
+    fn mul(self, other: Logarithm) -> Additive { panic!(); }
+}
+
+impl MulAssign<Logarithm> for Additive {
+    #[inline(always)]
+    fn mul_assign(&mut self, rhs: Logarithm) {
         *self = (*self) * rhs;
     }
 }
 
 #[cfg(table_bootstrap_complete)]
-impl FieldMul<Multiplier> for Additive {
+impl FieldMul<Logarithm> for Additive {
 	/// Return multiplier prepared form
     #[inline(always)]
-	fn to_multiplier(self) -> Multiplier {
-		Multiplier(LOG_TABLE[self.0 as usize])
+	fn to_multiplier(self) -> Logarithm {
+		Logarithm(LOG_TABLE[self.0 as usize])
 	}
 
 	/// Multiply field elements by a single multiplier, using SIMD if available
     #[inline(always)]
-	fn mul_assign_slice(selfy: &mut [Self], other: Multiplier) {
+	fn mul_assign_slice(selfy: &mut [Self], other: Logarithm) {
 		for s in selfy {
 			*s *= other;
 		}
@@ -57,21 +87,6 @@ impl MulAssign<Additive> for Additive {
     }
 }
 
-
-/// Multiplicaiton friendly LOG form of f2e16
-#[derive(Clone, Copy, Debug, Add, AddAssign, Sub, SubAssign, PartialEq, Eq)] // Default, PartialOrd,Ord
-pub struct Multiplier(pub Elt);
-
-impl Multiplier {
-    #[inline(always)]
-	pub fn to_wide(self) -> Wide {
-		self.0 as Wide
-	}
-    #[inline(always)]
-	pub fn from_wide(x: Wide) -> Multiplier {
-		Multiplier(x as Elt)
-	}
-}
 
 
 /*

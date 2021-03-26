@@ -19,7 +19,7 @@ pub const GENERATOR: Elt = 0x2D; // x^16 + x^5 + x^3 + x^2 + 1
 /// Cantor basis' final element
 pub const BASE_FINAL: Elt = 39198;
 
-include!("inc_log_mul.rs");
+include!("inc_logarithm.rs");
 
 #[cfg(table_bootstrap_complete)]
 include!("inc_afft.rs");
@@ -37,7 +37,7 @@ fn embedded_gf256() {
     let mask: Elt = !0xFF;
     for i in 1..=255 {
         let i = Additive(i as Elt).to_multiplier();
-        for j in 0..16 {
+        for j in 0..256 {
             let j = Additive(j as Elt);
             assert!(j.mul(i).0 & mask == 0);
         }
