@@ -83,7 +83,7 @@ impl FieldMul<Logarithm> for Additive {
 impl MulAssign<Additive> for Additive {
     #[inline(always)]
     fn mul_assign(&mut self, rhs: Additive) {
-        *self = EXP_TABLE[(*self).to_multiplier() + rhs.to_multiplier];
+        *self = Additive(EXP_TABLE[((*self).to_multiplier() + rhs.to_multiplier()).0 as usize]);
     }
 }
 
@@ -117,41 +117,41 @@ fn multiply_by_zero() {
 /// compute the norm_GF256/GF16 of to_be_normed
 /// element
 #[cfg(table_bootstrap_complete)]
-fn gf256_get_gf16_generator()
+fn gf256_get_gf16_generator() -> Additive
 {
     //gf256 = <x> then x is of order 255 and x^255 = 1
     //suppose gf16 = <y> then y^15 = 1
     //so 2^4 - 1 | 2^8 - 1 = (2^4 - 1)(2^4 + 1) so we have
     //y = x^(16+1)
-    return Additive(EXP_TABLE[LOG_TABLE[Additive(2).to_multiplier() * 17 % FIELD_SIZE as usize] as usize]);
+    return Additive(EXP_TABLE[LOG_TABLE[((Additive(2).to_multiplier().0 as usize * 17) % FIELD_SIZE) as usize] as usize])
 }
 
 /// compute the degree 2 subfield using norm of the generator
 /// generate multiplication tables.
 #[cfg(table_bootstrap_complete)]
-fn compute_gf16_in_g256() {
-    let gf16_gf256_generator = gf256_get_gf16_generator(2);
+fn compute_gf16_in_g256() ->  [Additive; 16] {
+    let gf16_gf256_generator = gf256_get_gf16_generator();
         
-    let mut gf16_in_gf256_log_table : [u8; 16];
-    gf16_in_gf256_log_table[0] = 1;
+    let mut gf16_in_gf256_log_table : [Additive; 16] = [Additive(0); 16] ;
+    gf16_in_gf256_log_table[0] = Additive(1);
     for i in 1..16 {
-        gf16_in_gf256_log_table[i] = gf16_in_gf256_log_table[i - 1] * gf16_gf256_generator;
+        gf16_in_gf256_log_table[i] = gf16_in_gf256_log_table[i - 1] * gf16_gf256_generator.to_multiplier();
     }
     
-    return  gf16_in_gf256_log_table;
+    return  gf16_in_gf256_log_table
     
 }
 
 /// check if members of a candidate basis is actually linear 
 /// independent.
 #[cfg(table_bootstrap_complete)]
-fn check_linear_independence(candidate_basis: Vec<Additive>) -> bool {
-    let mut basis_matrix: Vec<BitVec> = Vec::new();
+fn check_linear_independence(candidate_basis: &Vec<Additive>) -> bool {
+    let mut basis_matrix: Vec<BitVec<u32>> = Vec::new();
     for i in 0..8 {
-        basis_matrix.push(BitVec::from_bytes(candidate_basis[i].0));
+        basis_matrix.push(BitVec::from_bytes(&[candidate_basis[i].0 as u8]));
     }    
 
-    linear_algebra_util::determinant(basis_matrix)
+    linear_algebra_util::determinant(&mut basis_matrix)
 }
 
 /// compute the a new basis compatible with the subfield
@@ -161,23 +161,25 @@ fn check_linear_independence(candidate_basis: Vec<Additive>) -> bool {
 #[cfg(table_bootstrap_complete)]
 fn find_gf16_compatible_basis() -> Vec<Additive> {
     let y = gf256_get_gf16_generator();
-    for x in 2..255 {
-        let candidate_basis : Vec<Additive> = vec![Additive(1), y, y*y, y*y*y, Additive(1)*x, y*x, y*y*x, y*y*y*x];
-        if check_linear_independence(candidate_basis) {
-            return candidate_basis;
+    for i in 2..255 {
+        let x = Additive(i);
+        let candidate_basis : Vec<Additive> = vec![Additive(1), y, y*y.to_multiplier(), y*y.to_multiplier()*y.to_multiplier(), x, y*x.to_multiplier(), y*y.to_multiplier()*x.to_multiplier(), y*y.to_multiplier()*y.to_multiplier()*x.to_multiplier()];
+        if check_linear_independence(&candidate_basis) {
+            return candidate_basis
         }            
     }
+    panic!("No gf16 compatible basis  was found which seems impossible so I'm panicing")
 }
 
 /// gets an elmenet in gf16 compatible basis and transform it to original basis
 #[cfg(table_bootstrap_complete)]
-fn embed_gf16(gf16_elm: u8, gf16_compatible_basis: Vec<Additive>) {
-    let gf16_vec: BitVec = BitVec::from_byte(gf16_elm);
+fn embed_gf16(gf16_elm: u8, gf16_compatible_basis: &Vec<Additive>) -> Additive {
+    let gf16_vec: BitVec = BitVec::from_bytes(&[gf16_elm]);
     let mut embedded_elm: Additive = Additive(0);
     
     for i in 0..8 {
         if gf16_vec[0] {
-            embedded_elm.0 = embedded_elm.0 ^ gf16_compatible_basis;
+            embedded_elm.0 = embedded_elm.0 ^ gf16_compatible_basis[i].0;
         }
     }
 
@@ -192,9 +194,9 @@ fn embedded_gf16() {
     let mask: Elt = !0xF;
     for i in 1..16 {
         //let i = Additive(i as Elt).to_multiplier();
-        let i = embed_gf16(i, gf16_compatible_basis).to_multiplier;
-        for j in 0..16 {
-            let j = embed_gf16(j, gf16_compatible_basis).to_multiplier;
+        let i = embed_gf16(i, &gf16_compatible_basis).to_multiplier();
+        for j in 0..16 { 
+            let j = embed_gf16(j, &gf16_compatible_basis).to_multiplier();
             assert!(j.mul(i).0 & mask == 0);
         }
     }

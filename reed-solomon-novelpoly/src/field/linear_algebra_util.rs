@@ -1,6 +1,5 @@
 use bit_vec::BitVec;
 
-
 // fn main() {
 // let mut m1: Vec<Vec<f64>> = vec![vec![1.0,2.0],vec![3.0,4.0]];
 //     let mut r_m1 = &mut m1;
@@ -21,28 +20,58 @@ use bit_vec::BitVec;
 // 
 //     println!("Determinant of m2: {}", determinant(rr_m2));
 //     println!("Permanent of m2: {}", permanent(rr_m2));
-// 
+//
 //     println!("Determinant of m3: {}", determinant(rr_m3));
 //     println!("Permanent of m3: {}", permanent(rr_m3));
 // 
+// 
+//}
+
+//auxalury functions
+#[inline]
+fn bool_to_u8(bin_bool_val: bool) -> u8 {
+    if bin_bool_val { 1 } else { 0 }
+}
+
+// pub fn bit_vec_u8_from_elem(nbits: usize, bit: bool) -> BitVec<u8> {
+//     let nblocks = nbits / 8;
+
+//     let extra_bits = nbits % 8;
+//     if extra_bits > 0 {
+//         nblocks += 1;
+//     }
+
+//     let mask = ((1 as u8)  << extra_bits) - 1 as u8;
+//     let storage = vec![if bit { !(0 as u8) } else { (0 as u8) }; nblocks];
+//     //fix last byte
+//     if extra_bits > 0 {
+//         storage[nblocks - 1] &= mask;
+//     }
+    
+//     let mut bit_vec = BitVec {
+//         storage: storage,
+//         nbits,
+//     };
+    
+//     bit_vec
 // }
 
-pub fn minor( a: &mut Vec<BitVec<u8>>, x: usize, y: usize) ->  Vec<BitVec<u8>> {
-    let mut out_vec: Vec<BitVec<u8>> = vec![BitVec::from_elem(a.len() - 1, false); a.len() -1];
+pub fn minor( a: &mut Vec<BitVec>, x: usize, y: usize) ->  Vec<BitVec> {
+    let mut out_vec: Vec<BitVec> = vec![BitVec::from_elem(a.len() -1, false); a.len() -1];
     for i in 0..a.len()-1 {
         for j in 0..a.len()-1 {
             match () {
                 _ if (i < x && j < y) => {
-                    out_vec[i][j] = a[i][j];
+                    out_vec[i].set(j,a[i][j]);
                 },
                 _ if (i >= x && j < y) => {
-                    out_vec[i][j] = a[i + 1][j];
+                    out_vec[i].set(j, a[i + 1][j]);
                 },
                 _ if (i < x && j >= y) => {
-                    out_vec[i][j] = a[i][j + 1];
+                    out_vec[i].set(j, a[i][j + 1]);
                 },
                 _ => { //i > x && j > y 
-                    out_vec[i][j] = a[i + 1][j + 1];
+                    out_vec[i].set(j, a[i + 1][j + 1]);
                 },
             }
         }
@@ -50,19 +79,19 @@ pub fn minor( a: &mut Vec<BitVec<u8>>, x: usize, y: usize) ->  Vec<BitVec<u8>> {
     out_vec
 }
 
-pub fn determinant (matrix: &mut Vec<BitVec<u8>>) -> bool {
+pub fn determinant (matrix: &mut Vec<BitVec>) -> bool {
     match () {
         _ if (matrix.len() == 1) => {
             matrix[0][0]
         },
         _ => {
-            let mut sign = 1.0;
-            let mut sum = 0.0;
+            let mut sign : u8 = 1;
+            let mut sum = 0;
             for i in 0..matrix.len() {
-                sum = sum + sign * matrix[0][i] * determinant(&mut minor(matrix, 0, i));
-                sign = sign * -1.0;
+                sum = sum + sign * bool_to_u8(matrix[0][i]) * bool_to_u8(determinant(&mut minor(matrix, 0, i)));
+                sign = sign * 1; //-1 == 1 mod 2
             }
-            sum
+            sum % 2 != 0
         }
     }
 }
