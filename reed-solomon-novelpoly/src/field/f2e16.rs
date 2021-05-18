@@ -1,13 +1,7 @@
 #[cfg(table_bootstrap_complete)]
 use super::*;
 
-pub type Elt = u16;
-pub type Wide = u32;
-decl_field_additive!("f2e16", bits = 16);
-
-/// Quotient ideal generator given by tail of irreducible polynomial
-pub const GENERATOR: Elt = 0x2D; // x^16 + x^5 + x^3 + x^2 + 1
-
+include!(concat!(env!("OUT_DIR"), "/table_f2e16.rs"));
 // impl Additive {
 //     pub const ONE: Additive = Additive(???);
 // }
@@ -29,6 +23,30 @@ include!("inc_encode.rs");
 
 #[cfg(table_bootstrap_complete)]
 include!("inc_reconstruct.rs");
+
+
+pub type Elt = u16;
+pub type Wide = u32;
+
+/// Quotient ideal generator given by tail of irreducible polynomial
+pub const GENERATOR: Elt = 0x2D; // x^16 + x^5 + x^3 + x^2 + 1
+const FIELD_BITS = 16;
+
+#[derive(Clone, Copy, Debug, Default, BitXor, BitXorAssign, PartialEq, Eq)]
+pub struct GF2e16;
+
+impl FieldAdd for GF2e16 {
+    const FIELD_BITS: usize = FIELD_BITS;                                                 
+   	const ZERO: Additive = Additive(0);                                                            
+    const ONE: Additive = Additive(1);                                                           
+}                                                                                                
+impl GF2e16 {                                                                                             
+         // pub const FIELD_BITS: usize = Additive::FIELD_BITS;                                              
+         // pub const FIELD_SIZE: usize = Additive::FIELD_SIZE;                                              
+                                                                                                          
+//         pub const ONEMASK: Elt = (Additive::FIELD_SIZE - 1) as Elt;                                      //
+
+}
 
 
 #[test]

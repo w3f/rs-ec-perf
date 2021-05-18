@@ -16,12 +16,13 @@ pub use self::encode::*;
 pub use self::reconstruct::*;
 pub use super::util::*;
 
-use super::field::f2e16;
+//additive field which knows also how to multiply
+use super::field::FieldAdd as Field;
 
 /// Params for the encoder / decoder
 /// derived from a target validator count.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CodeParams {
+pub struct CodeParams<F: Field> {
 	/// total number of message symbols to send
 	/// Invariant is a power of base 2
 	n: usize,
@@ -32,7 +33,7 @@ pub struct CodeParams {
 	wanted_n: usize,
 }
 
-impl CodeParams {
+impl<F: Field> CodeParams<F> {
 	/// Create a new reed solomon erasure encoding wrapper
 	/// `k` the intended number of data shards needed to recover.
 	/// `n` the intended number of resulting shards.
@@ -61,19 +62,19 @@ impl CodeParams {
 	}
 
 	// make a reed-solomon instance.
-	pub fn make_encoder(&self) -> ReedSolomon {
-		ReedSolomon::new(self.n, self.k, self.wanted_n)
+	pub fn make_encoder(&self) -> ReedSolomon<F> {
+		ReedSolomon<F>::new(self.n, self.k, self.wanted_n)
 			.expect("this struct is not created with invalid shard number; qed")
 	}
 }
 
-pub struct ReedSolomon {
+pub struct ReedSolomon<F: Field> {
 	n: usize,
 	k: usize,
 	wanted_n: usize,
 }
 
-impl ReedSolomon {
+impl<F: Field> ReedSolomon<F> {
 	/// Returns the size per shard in bytes
 	pub fn shard_len(&self, payload_size: usize) -> usize {
 		let payload_symbols = (payload_size + 1) / 2;
@@ -120,7 +121,7 @@ impl ReedSolomon {
 			let data_piece = &bytes[i..end];
 			assert!(!data_piece.is_empty());
 			assert!(data_piece.len() <= k2);
-			let encoding_run = f2e16::encode_sub(data_piece, self.n, self.k)?;
+			let encoding_run = F::encode_sub(data_piece, self.n, self.k)?;
 			for val_idx in 0..validator_count {
 				AsMut::<[[u8; 2]]>::as_mut(&mut shards[val_idx])[chunk_idx] = encoding_run[val_idx].0.to_be_bytes();
 			}
@@ -182,7 +183,7 @@ impl ReedSolomon {
 
 		// Evaluate error locator polynomial only once
 		let mut error_poly_in_log = [Logarithm(0); FIELD_SIZE];
-		f2e16::eval_error_polynomial(&erasures[..], &mut error_poly_in_log[..], FIELD_SIZE);
+		F::eval_error_polynomial(&erasures[..], &mut error_poly_in_log[..], FIELD_SIZE);
 
 		let mut acc = Vec::<u8>::with_capacity(shard_len_in_syms * 2 * self.k);
 		for i in 0..shard_len_in_syms {
@@ -201,7 +202,7 @@ impl ReedSolomon {
 
 			// reconstruct from one set of symbols which was spread over all erasure chunks
 			let piece =
-				f2e16::reconstruct_sub(&decoding_run[..], &erasures, self.n, self.k, &error_poly_in_log).unwrap();
+				F::reconstruct_sub(&decoding_run[..], &erasures, self.n, self.k, &error_poly_in_log).unwrap();
 			acc.extend_from_slice(&piece[..]);
 		}
 

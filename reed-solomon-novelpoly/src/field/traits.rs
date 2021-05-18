@@ -11,6 +11,16 @@ pub trait FieldAdd :
 	const FIELD_SIZE: usize = 1_usize << Self::FIELD_BITS;
     const ZERO: Self;
     // const ONE: Self;
+
+    #[inline(always)]                                                                            
+    fn to_wide(self) -> Wide {                                                                  
+         self.0 as Wide                                                                            
+    }                                                                                               
+
+    #[inline(always)]                                                                            
+    fn from_wide(x: Wide) -> Additive {                                                         
+        FieldAdd(x as Elt)                                                                          //
+    }
 }
 
 /// Paramaterized field multiplier representation
@@ -33,48 +43,50 @@ where
 	}
 }
 
-
-/// Declare field and include its tables
-///
-/// Requires Elt and Wide be defined previosuly.
-macro_rules! decl_field_additive {
-	($name:literal, bits = $fbits:literal) => {
-
-        use derive_more::{Add, AddAssign, BitXor, BitXorAssign, Sub, SubAssign};
-        use super::{FieldAdd,FieldMul};
-
-        /// Additive via XOR form
-        #[derive(Clone, Copy, Debug, Default, BitXor, BitXorAssign, PartialEq, Eq)] // PartialOrd,Ord
-        pub struct Additive(pub Elt);
-
-        impl FieldAdd for Additive {
-        	const FIELD_BITS: usize = $fbits;
-        	const ZERO: Additive = Additive(0);
-        	// const ONE: Additive = Additive(1);
-        }
-
-        impl Additive {
-            #[inline(always)]
-        	pub fn to_wide(self) -> Wide {
-        		self.0 as Wide
-        	}
-            #[inline(always)]
-        	pub fn from_wide(x: Wide) -> Additive {
-        		Additive(x as Elt)
-        	}
-        }
-
-        pub const FIELD_BITS: usize = Additive::FIELD_BITS;
-        pub const FIELD_SIZE: usize = Additive::FIELD_SIZE;
-
-        pub const ONEMASK: Elt = (Additive::FIELD_SIZE - 1) as Elt;
-
-		pub const FIELD_NAME: &'static str = $name;
-
-		#[cfg(table_bootstrap_complete)]
-		include!(concat!(env!("OUT_DIR"), "/table_", $name, ".rs"));
-
-	};
-} // macro_rules! decl_field_additive
+// Replacing this with an actual trait instanciation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// /// Declare field and include its tables                                                                 //
+// ///                                                                                                      //
+// /// Requires Elt and Wide be defined previosuly.                                                         //
+// macro_rules! decl_field_additive {                                                                       //
+// 	($name:literal, bits = $fbits:literal) => {                                                             //
+//                                                                                                          //
+//         use derive_more::{Add, AddAssign, BitXor, BitXorAssign, Sub, SubAssign};                         //
+//         use super::{FieldAdd,FieldMul};                                                                  //
+//                                                                                                          //
+//         /// Additive via XOR form                                                                        //
+//         #[derive(Clone, Copy, Debug, Default, BitXor, BitXorAssign, PartialEq, Eq)] // PartialOrd,Ord    //
+//         pub struct Additive(pub Elt);                                                                    //
+//                                                                                                          //
+//         impl FieldAdd for Additive {                                                                     //
+//         	const FIELD_BITS: usize = $fbits;                                                               //
+//         	const ZERO: Additive = Additive(0);                                                             //
+//         	// const ONE: Additive = Additive(1);                                                           //
+//         }                                                                                                //
+//                                                                                                          //
+//         impl Additive {                                                                                  //
+//             #[inline(always)]                                                                            //
+//         	pub fn to_wide(self) -> Wide {                                                                  //
+//         		self.0 as Wide                                                                              //
+//         	}                                                                                               //
+//             #[inline(always)]                                                                            //
+//         	pub fn from_wide(x: Wide) -> Additive {                                                         //
+//         		Additive(x as Elt)                                                                          //
+//         	}                                                                                               //
+//         }                                                                                                //
+//                                                                                                          //
+//         pub const FIELD_BITS: usize = Additive::FIELD_BITS;                                              //
+//         pub const FIELD_SIZE: usize = Additive::FIELD_SIZE;                                              //
+//                                                                                                          //
+//         pub const ONEMASK: Elt = (Additive::FIELD_SIZE - 1) as Elt;                                      //
+//                                                                                                          //
+// 		pub const FIELD_NAME: &'static str = $name;                                                         //
+//                                                                                                          //
+// 		#[cfg(table_bootstrap_complete)]                                                                    //
+// 		include!(concat!(env!("OUT_DIR"), "/table_", $name, ".rs"));                                        //
+//                                                                                                          //
+// 	};                                                                                                      //
+// } // macro_rules! decl_field_additive                                                                    //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
