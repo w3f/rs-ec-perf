@@ -1,7 +1,4 @@
-
-pub use core::ops::{Mul, MulAssign};
-
-include!("inc_cantor_basis.rs");
+use derive_more::{Add, AddAssign, BitXor, BitXorAssign, Sub, SubAssign};
 
 /// Multiplicaiton friendly LOG form of f2e16
 #[derive(Clone, Copy, Debug, Add, AddAssign, Sub, SubAssign, PartialEq, Eq)] // Default, PartialOrd,Ord

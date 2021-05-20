@@ -6,7 +6,9 @@ use crate::util::*;
 mod traits;
 pub use traits::{FieldAdd,FieldMul};
 
-jpub mod f256;
+pub mod logarithm;
+
+pub mod f256;
 pub mod f2e16;
 pub mod afft;
 

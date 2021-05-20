@@ -3,7 +3,6 @@ use super::*;
 
 pub type Elt = u8;
 pub type Wide = u16;
-decl_field_additive!("f256", bits = 8);
 
 /// Quotient ideal generator given by tail of irreducible polynomial
 // Valid Cantor basis, passes embedded_gf16
@@ -31,6 +30,8 @@ pub const GENERATOR: Elt = 0x1D; //GF(2^8): x^8 + x^4 + x^3 + x^2 + 1
 //     pub const ONE: Additive = Additive(???);
 // }
 
+const FIELD_BITS = 16;
+
 /// Cantor basis' final element
 pub const BASE_FINAL: Elt = 230;
 // pub const BASE_FINAL: Elt = 238;
@@ -38,8 +39,27 @@ pub const BASE_FINAL: Elt = 230;
 // /// Cantor basis
 // pub const BASE: [Elt; FIELD_BITS] = [1, 214, 152, 146, 86, 200, 88, 230];
 
-include!("inc_logarithm.rs");
+#[derive(Clone, Copy, Debug, Default, BitXor, BitXorAssign, PartialEq, Eq)]
+pub struct GF2e8(pub Elt);
+
+use crate::logarithm::Logarithm;
 
 #[cfg(table_bootstrap_complete)]
 include!("inc_afft.rs");
+
+impl FieldAdd for GF2e16 {
+    const FIELD_BITS: usize = FIELD_BITS;                                                 
+   	const ZERO: Additive = Additive(0);                                                            
+    const ONE: Additive = Additive(1);                                                           
+}                                                                                                
+impl GF2e16 {                                                                                             
+         // pub const FIELD_BITS: usize = Additive::FIELD_BITS;                                              
+         // pub const FIELD_SIZE: usize = Additive::FIELD_SIZE;                                              
+                                                                                                          
+    //         pub const ONEMASK: Elt = (Additive::FIELD_SIZE - 1) as Elt;                                      //
+    #[cfg(table_bootstrap_complete)]
+    include!(concat!(env!("OUT_DIR"), "/table_f2e16.rs"));
+
+
+}
 

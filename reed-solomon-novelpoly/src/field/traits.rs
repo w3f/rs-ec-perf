@@ -2,7 +2,7 @@
 use core::ops::{BitXor, BitXorAssign, Mul, MulAssign};
 
 /// Additive field representation 
-pub trait FieldAdd :
+pub trait FieldAdd<Wide, Elt>  :
     Clone + Copy + core::fmt::Debug + Default
     + PartialEq<Self> + Eq
     + BitXor<Self, Output=Self> + BitXorAssign<Self>
@@ -13,13 +13,14 @@ pub trait FieldAdd :
     // const ONE: Self;
 
     #[inline(always)]                                                                            
-    fn to_wide(self) -> Wide {                                                                  
-         self.0 as Wide                                                                            
+    fn to_wide(self) -> Wide {
+        
+         self.0 as Wide                                                                 
     }                                                                                               
 
     #[inline(always)]                                                                            
-    fn from_wide(x: Wide) -> Additive {                                                         
-        FieldAdd(x as Elt)                                                                          //
+    fn from_wide(x: Wide) -> Self {        
+        FieldAdd::<Wide, Elt>::new(x as Elt)                                                                          //
     }
 }
 
@@ -36,7 +37,7 @@ where
     /// We avoid using `where [Self]: MulAssign<Multiplier>` here because
     /// providing a default trait impl requires specialization.
     #[inline(always)]
-	fn mul_assign_slice(selfy: &mut [Self], other: Multiplier) {
+	fn mul_assign_slice(selfy: &mut [Self], other: Multiplier){ 
 		for s in selfy {
 			*s = (*s) * (other);
 		}

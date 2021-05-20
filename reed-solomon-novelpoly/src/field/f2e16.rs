@@ -1,7 +1,9 @@
+use core::ops::{BitXor, BitXorAssign, Mul, MulAssign};
+
+use derive_more::{Add, AddAssign, BitXor, BitXorAssign, Sub, SubAssign};
+
 #[cfg(table_bootstrap_complete)]
 use super::*;
-
-include!(concat!(env!("OUT_DIR"), "/table_f2e16.rs"));
 // impl Additive {
 //     pub const ONE: Additive = Additive(???);
 // }
@@ -13,7 +15,7 @@ include!(concat!(env!("OUT_DIR"), "/table_f2e16.rs"));
 /// Cantor basis' final element
 pub const BASE_FINAL: Elt = 39198;
 
-include!("inc_logarithm.rs");
+use logarithm::Logarithm;
 
 #[cfg(table_bootstrap_complete)]
 include!("inc_afft.rs");
@@ -33,7 +35,9 @@ pub const GENERATOR: Elt = 0x2D; // x^16 + x^5 + x^3 + x^2 + 1
 const FIELD_BITS = 16;
 
 #[derive(Clone, Copy, Debug, Default, BitXor, BitXorAssign, PartialEq, Eq)]
-pub struct GF2e16;
+pub struct GF2e16(pub Elt);
+
+
 
 impl FieldAdd for GF2e16 {
     const FIELD_BITS: usize = FIELD_BITS;                                                 
@@ -44,7 +48,10 @@ impl GF2e16 {
          // pub const FIELD_BITS: usize = Additive::FIELD_BITS;                                              
          // pub const FIELD_SIZE: usize = Additive::FIELD_SIZE;                                              
                                                                                                           
-//         pub const ONEMASK: Elt = (Additive::FIELD_SIZE - 1) as Elt;                                      //
+    //         pub const ONEMASK: Elt = (Additive::FIELD_SIZE - 1) as Elt;                                      //
+    #[cfg(table_bootstrap_complete)]
+    include!(concat!(env!("OUT_DIR"), "/table_f2e16.rs"));
+
 
 }
 
