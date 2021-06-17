@@ -53,12 +53,23 @@ fn base_2_upper_bound() {
 fn k_n_construction() {
 	// skip the two, it's a special case
 	for validator_count in 3_usize..=8200 {
-        let rs = ReedSolomon::<f2e16::Additive>::new(validator_count, recoverablity_subset_size(validator_count)).unwrap();
-        
+		let rs =
+			ReedSolomon::<f2e16::Additive>::new(validator_count, recoverablity_subset_size(validator_count)).unwrap();
+
 		assert_eq!(rs.get_number_of_all_shards(), validator_count);
 		assert!(validator_count <= rs.n, "vc={} <= n={} violated", validator_count, rs.n); //no public interface to n as it is internal to the RS coder
-		assert!(validator_count / 3 >= rs.get_number_of_data_shards() - 1, "vc={} / 3 >= k={} violated", validator_count, rs.get_number_of_data_shards());
-		assert!(validator_count >= (rs.get_number_of_data_shards()-1) *3, "vc={} <= k={} *3  violated", validator_count, rs.get_number_of_data_shards());
+		assert!(
+			validator_count / 3 >= rs.get_number_of_data_shards() - 1,
+			"vc={} / 3 >= k={} violated",
+			validator_count,
+			rs.get_number_of_data_shards()
+		);
+		assert!(
+			validator_count >= (rs.get_number_of_data_shards() - 1) * 3,
+			"vc={} <= k={} *3  violated",
+			validator_count,
+			rs.get_number_of_data_shards()
+		);
 	}
 }
 
@@ -73,7 +84,7 @@ fn sub_encode_decode() -> Result<()> {
 	let mut data = [0u8; K2];
 	rng.fill_bytes(&mut data[..]);
 
-    let rs_coder = ReedSolomon::<f2e16::Additive>::new(N, K)?;
+	let rs_coder = ReedSolomon::<f2e16::Additive>::new(N, K)?;
 	let codewords = rs_coder.encode(&data)?;
 	let mut codewords = codewords.into_iter().map(|x| Some(x)).collect::<Vec<_>>();
 	assert_eq!(codewords.len(), N);
@@ -143,7 +154,8 @@ fn sub_eq_big_for_small_messages() {
 	let mut error_poly_in_log = vec![Logarithm(0); FIELD_SIZE];
 	rs.eval_error_polynomial(&erasures[..], &mut error_poly_in_log[..]);
 
-	let reconstructed_sub = ReedSolomon::reconstruct_sub(&codewords_sub[..], &erasures[..], &error_poly_in_log).unwrap();
+	let reconstructed_sub =
+		ReedSolomon::reconstruct_sub(&codewords_sub[..], &erasures[..], &error_poly_in_log).unwrap();
 	let reconstructed = reconstruct(codewords, rs.n).unwrap();
 	itertools::assert_equal(reconstructed.iter().take(K2), reconstructed_sub.iter().take(K2));
 	itertools::assert_equal(reconstructed.iter().take(K2), data.iter());
@@ -239,7 +251,6 @@ simplicissimus!(case_3: validators: 4, payload: 100);
 
 // Way more validators than payload bytes
 simplicissimus!(case_4: validators: 2003, payload: 17);
-
 
 #[test]
 fn ported_c_test() {
