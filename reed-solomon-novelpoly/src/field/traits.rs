@@ -7,11 +7,14 @@ pub trait FieldAdd :
     + BitXor<Self, Output=Self> + BitXorAssign<Self>
 
 {
-	const FIELD_BITS: usize;
+    const FIELD_BITS: usize;
     const FIELD_BYTES: usize = Self::FIELD_BITS / 8;
-	const FIELD_SIZE: usize = 1_usize << Self::FIELD_BITS;
+    const FIELD_SIZE: usize = 1_usize << Self::FIELD_BITS;
     const ZERO: Self;
 
+    fn to_bytes(&self) -> [u8; Self::FIELD_BYTES];
+    fn from_bytes(x: [u8; Self::FIELD_BYTES]) -> Self;
+    
     // const ONE: Self;
     //type ElementAsBytes;// = [u8; Self::FIELD_BYTES];
 

@@ -151,11 +151,9 @@ where
 
         let received_shards = <ShardHold<S,F>>::equalize_shards_number_with_code_block_length(&received_shards, self.n);
 
-		assert_eq!(received_shards.len(), self.n);
-
-		// must be collected after expanding `received_shards` to the anticipated size
-		let mut existential_count = 0_usize;
-		let erasures = received_shards
+	    // must be collected after expanding `received_shards` to the anticipated size
+	    let mut existential_count = 0_usize;
+	    let erasures = received_shards
 			.iter()
 			.map(|x| x.is_none())
 			.inspect(|erased| existential_count += !*erased as usize)
@@ -171,27 +169,25 @@ where
 		self.eval_error_polynomial(&erasures[..], &mut error_poly_in_log[..]);
 
 		let mut acc = Vec::<u8>::with_capacity(shard_len_in_syms * 2 * self.k);
-		for i in 0..shard_len_in_syms {
-			// take the i-th element of all shards and try to recover
-			let decoding_run = received_shards
-				.iter()
-				.map(|x| {
-					x.as_ref().map(|x| {
-						let z = AsRef::<[[u8; F::FIELD_BYTES]]>::as_ref(&x)[i];
-						Additive(u16::from_be_bytes(&z[..]))
-					})
-				})
-				.collect::<Vec<Option<Additive>>>();
-
-			assert_eq!(decoding_run.len(), self.n);
+            let mut decoding_run = vec![Additive::ZERO; self.n];
+            let mut j = 0usize;
+	    for i in 0..shard_len_in_syms {
+		// take the i-th element of all shards and try to recover
+		let j in 0..self.n {
+		    for k in 0..F::FIELD_BYTES {
+			let f = F::FIELD_BYTES*j;
+		        decoding_run[i] = F::from_bytes( received_shards[i].get_chunk(j) );
+		    }
+		}
 
 			// reconstruct from one set of symbols which was spread over all erasure chunks
 			let piece =
 				self.reconstruct_sub(&decoding_run[..], &erasures, &error_poly_in_log).unwrap();
-			acc.extend_from_slice(&piece[..]);
-		}
+		acc.extend_from_slice(&piece[..]);
+		
+	    }
 
-		Ok(acc)
+    	    Ok(acc)
 	}
 
     /// Encoding alg for k/n < 0.5: message is a power of two
