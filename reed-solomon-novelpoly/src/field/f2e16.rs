@@ -16,12 +16,12 @@ impl AfftField for F2e16 {}
 #[test]
 fn embedded_gf256() {
     // We've a leaky to_multiplier abstraction that fucks up zero, so start at 1.
-    let mask: F2e16::Element = !0xFF;
+    let mask: <F2e16 as FieldAdd>::Element = !0xFF;
     for i in 1..=255 {
-        let i = Additive(i as F2e16::Element).to_multiplier();
+        let i = Additive(i as <F2e16 as FieldAdd>::Element).to_multiplier();
         for j in 0..256 {
-            let j = Additive(j as F2e16::Element);
-            assert!(j.mul(i).0 & mask == 0);
+            let j = Additive(j as <F2e16 as FieldAdd>::Element);
+            assert!(FieldMul::<F2e16, _>::mul(j, Logarithm::<F2e16>(i)).0 & mask == 0);
         }
     }
 }
